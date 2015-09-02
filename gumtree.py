@@ -105,7 +105,7 @@ if __name__ == '__main__':
 			#Move old results to cache
 			listingCache = listings
 			#Clear listings table for new fetch
-			listrings = []
+			listings = []
 			#Fetch new listings
 			listings = getListings()
 			#Compare listings with cache, check for new results, send mail
