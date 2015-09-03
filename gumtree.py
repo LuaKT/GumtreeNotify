@@ -7,7 +7,7 @@ import random
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 
-sleepTime = 5 * 60 # 5 Minutes
+sleepTime = 10 * 60 # 10 Minutes
 
 try:
 	email_username = sys.argv[1]
