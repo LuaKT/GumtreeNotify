@@ -74,7 +74,7 @@ def send_mail():
 	message = 'New gumtree listings for URL: ' + searchURL + "\n\n"
 	for listing in newListings:
 		message = message + "%s - %s" % (listing["Name"], listing["Price"]) + "\n"
-		message = message + "https://gumtree.com%s" % (listing["Link"]) + "\n\n"
+		message = message + "http://gumtree.com%s" % (listing["Link"]) + "\n\n"
 	message = message + ''
 
 	msg.attach(MIMEText(message.encode('utf-8'), 'plain', 'UTF-8'))
