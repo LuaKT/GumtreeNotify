@@ -43,7 +43,7 @@ def getListings():
 
 		#Append dictionary to listings array
 		tmpListings.append(dict(Name=title, Description=description, Price=price, Location=location, Link=link))
-		
+	printArray(tmpListings)		
 	return tmpListings
 	
 def checkListings():
@@ -93,6 +93,10 @@ def send_mail():
 	print "** Mail sent!"
 
 	mailserver.quit()
+def printArray(arr):
+        for item in arr:
+                print item["Name"]
+
 
 if __name__ == '__main__':
 	print "Checking for listings at: " + searchURL
