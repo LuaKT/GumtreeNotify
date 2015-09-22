@@ -95,7 +95,7 @@ def send_mail():
 	mailserver.quit()
 def printArray(arr):
         for item in arr:
-                print item["Name"]
+                print item["Name"].encode("utf-8")
 
 
 if __name__ == '__main__':
