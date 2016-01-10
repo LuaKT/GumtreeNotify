@@ -8,7 +8,7 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 import pprint
 
-sleepTime = 5 * 60 # 10 Minutes
+sleepTime = 10 * 60 # 10 Minutes
 
 try:
     email_username = sys.argv[1]
