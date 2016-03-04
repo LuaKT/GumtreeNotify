@@ -107,6 +107,10 @@ if __name__ == '__main__':
             listings = []
             #Fetch new listings
             listings = getListings()
+            #If page broken, use old listings
+            if not listings:
+                listings = listingCache
+
             #Compare listings with cache, check for new results, send mail
             newListings = checkListings()
             if newListings:
