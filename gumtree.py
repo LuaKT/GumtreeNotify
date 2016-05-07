@@ -33,7 +33,7 @@ def getListings():
 
 
     #Get each lisiting
-    for listing in bs.find("ul", {"data-q":"naturalresults"}).find_all("article", class_="listing-maxi"):
+    for listing in bs.find("ul", {"data-q":"naturalresults"}).find_all("article", class_="listing-horizontal"):
         content = listing.find("div", class_="listing-content")
         adId = listing['data-q'][3:]
         link = listing.find("a", class_="listing-link").get('href')
