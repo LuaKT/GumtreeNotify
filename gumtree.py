@@ -33,7 +33,7 @@ def getListings():
 
 
     #Get each lisiting
-    for listing in bs.find("ul", {"data-q":"naturalresults"}).find_all("article", class_="listing-horizontal"):
+    for listing in bs.find("ul", {"data-q":"naturalresults"}).find_all("article", class_="listing-maxi"):
         content = listing.find("div", class_="listing-content")
         adId = listing['data-q'][3:]
         link = listing.find("a", class_="listing-link").get('href')
@@ -52,7 +52,9 @@ def checkListings():
     hashes = []
     cachedHashes = []
     tmpNewListings = []
-    differences = [x for x in listings if x not in listingCache]
+    #differences = [x for x in listings if x not in listingCache]
+    check = set([d['AdID'] for d in listingCache])
+    differences = [d for d in listings if d['AdID'] not in check]
     
     for d in differences:
         tmpNewListings.append(d)
