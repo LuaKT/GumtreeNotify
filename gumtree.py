@@ -1,76 +1,63 @@
+from __future__ import print_function
 import json, re, sys
-import urllib2
 from bs4 import BeautifulSoup
 import smtplib
 import time
 import random
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
 import pprint
 
-sleepTime = 1 * 60 # 10 Minutes
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 try:
-    email_username = sys.argv[1]
-    email_password = sys.argv[2]
-    email_server = sys.argv[3]
-    email_from = sys.argv[4]
-    email_to = sys.argv[5]
-    searchURL = sys.argv[6]
-
-except IndexError:
-    exit("Missing arguments")
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+except:
+    from email.MIMEMultipart import MIMEMultipart
+    from email.MIMEText import MIMEText
+sleepTime = 1 * 60 # 1 Minute(s)
 
 listings = []
-listingCache = []
-newListings = []
+listings_old = []
+listings_new = []
 
-def getListings():
-    tmpListings = []
-    content = urllib2.urlopen(searchURL).read()
-    bs = BeautifulSoup(content, 'html.parser')
-    #bs = BeautifulSoup(open("test.html"), 'html.parser')
+def parse_results(search_url):
+    results = []
+    soup = BeautifulSoup(urlopen(search_url).read(), "html.parser")
+    listings = soup.find('ul', {"data-q":"naturalresults"}).find_all("article", class_="listing-maxi")
+    
+    for listing in listings:
+        id = listing['data-q'][3:]
+        url = "https://gumtree.com" + listing.find("a", class_="listing-link").get('href')
+        title = listing.find("h2", class_="listing-title", text=True).get_text(strip=True)
+        price = listing.find("strong", class_="listing-price", text=True).get_text(strip=True)
+        
+        results.append({'id': id, 'url': url, 'title': title, 'price': price})
+    #print(results)
+    return results
 
-
-    #Get each lisiting
-    for listing in bs.find("ul", {"data-q":"naturalresults"}).find_all("article", class_="listing-maxi"):
-        content = listing.find("div", class_="listing-content")
-        adId = listing['data-q'][3:]
-        link = listing.find("a", class_="listing-link").get('href')
-
-        title = content.find("h2", class_="listing-title", text=True).get_text(strip=True)
-        description = content.find("p", {"itemprop" : "description"}, text=True).get_text(strip=True)
-        price = content.find("strong", {"itemprop" : "price"}, text=True).get_text(strip=True)
-        location = re.findall(r'[ \w]+, [ \w]+', content.find("div", class_="listing-location").get_text(strip=True))[0]
-
-        #Append dictionary to listings array
-        tmpListings.append(dict(AdID=adId, Name=title, Description=description, Price=price, Location=location, Link=link))
-    printArray(tmpListings)		
-    return tmpListings
-
-def checkListings():
-    hashes = []
-    cachedHashes = []
-    tmpNewListings = []
-    #differences = [x for x in listings if x not in listingCache]
-    check = set([d['AdID'] for d in listingCache])
-    differences = [d for d in listings if d['AdID'] not in check]
+def new_listings(results_old, results):
+    listings_new = []
+    check = set([d['id'] for d in results_old])
+    differences = [d for d in results if d['id'] not in check]
     
     for d in differences:
-        tmpNewListings.append(d)
+        listings_new.append(d)
 
-    return tmpNewListings
+    return listings_new
 
-def send_mail():
+def send_mail(listings):
 
     msg = MIMEMultipart()
     msg['From'] = email_from
     msg['To'] = email_to
-    msg['Subject'] = "Gumtree Listings (%s)" % len(newListings)
+    msg['Subject'] = "Gumtree Listings (%s)" % len(listings)
     message = 'New gumtree listings for URL: ' + searchURL + "\n\n"
-    for listing in newListings:
-        message = message + "%s - %s" % (listing["Name"], listing["Price"]) + "\n"
-        message = message + "http://gumtree.com%s" % (listing["Link"]) + "\n\n"
+    for listing in listings:
+        message = message + "%s - %s" % (listing["title"], listing["price"]) + "\n"
+        message = message + listing["url"] + "\n\n"
     message = message + ''
 
     msg.attach(MIMEText(message.encode('utf-8'), 'plain', 'UTF-8'))
@@ -86,41 +73,48 @@ def send_mail():
 
     mailserver.sendmail(email_from, email_to, msg.as_string())
 
-    print "** Mail sent!"
+    print("** Mail sent!")
 
     mailserver.quit()
 
-def printArray(arr):
-    for item in arr:
-        print item["Name"].encode("utf-8")
-
 
 if __name__ == '__main__':
-    print "Checking for listings at: " + searchURL
+    try:
+        email_username = sys.argv[1]
+        email_password = sys.argv[2]
+        email_server = sys.argv[3]
+        email_from = sys.argv[4]
+        email_to = sys.argv[5]
+        searchURL = sys.argv[6]
+
+    except IndexError:
+        exit("Missing arguments")
+
+    print("Checking for listings at: " + searchURL)
     #Populate result array with new listings
-    listings = getListings()
+    listings = parse_results(searchURL)
 
     while True:
-        print "Checking gumtree now"
+        print("Checking gumtree now")
         try:
             #Move old results to cache
-            listingCache = listings
+            listings_old = listings
             #Clear listings table for new fetch
             listings = []
             #Fetch new listings
-            listings = getListings()
+            listings = parse_results(searchURL)
             #If page broken, use old listings
             if not listings:
                 listings = listingCache
 
             #Compare listings with cache, check for new results, send mail
-            newListings = checkListings()
-            if newListings:
-                print "New listings! Sending mail"
-                send_mail()
+            listings_new = new_listings(listings_old, listings)
+            if listings_new:
+                print("New listings! Sending mail")
+                send_mail(listings_new)
             else:
-                print "No new listings"
-        except Exception, e:
-            print str(e) + '\n!Failed!'
-        print "Sleeping for %d seconds" % sleepTime
+                print("No new listings")
+        except Exception as e:
+            print(str(e) + '\n!Failed!')
+        print("Sleeping for %d seconds" % sleepTime)
         time.sleep(sleepTime + random.randint(0, 20)) #Sleep for set time + random between 0 and 20 seconds
