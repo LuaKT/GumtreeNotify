@@ -105,7 +105,7 @@ if __name__ == '__main__':
             listings = parse_results(searchURL)
             #If page broken, use old listings
             if not listings:
-                listings = listingCache
+                listings = listings_old
 
             #Compare listings with cache, check for new results, send mail
             listings_new = new_listings(listings_old, listings)
